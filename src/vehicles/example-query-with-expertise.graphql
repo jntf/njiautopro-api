@@ -1,0 +1,39 @@
+# Exemple de requête GraphQL pour récupérer un véhicule avec expertise détaillée
+query VehicleWithExpertise {
+  vehicle(id: "mc-automobiles-68587") {
+    id
+    brand
+    model
+    version
+    fuel
+    year
+    mileage
+    price
+    totalPrice
+    
+    # Champs d'expertise
+    expertise {
+      date_expertise
+      boite_motorisation
+      pare_choc_av
+      capot
+      jantes_alu
+      climatisation
+      vitres_electriques
+      gps
+      bluetooth
+      radar_recul
+      feux_automatique
+      phares
+      sellerie
+      retros_rab_elec
+      accoudoir
+    }
+    
+    # Images et liens relatifs à l'expertise
+    images
+    damageImages
+    expertiseUrl
+    tourUrl
+  }
+}

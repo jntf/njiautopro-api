@@ -1,0 +1,83 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Expertise {
+  accoudoir: String
+  anti_brouillard: String
+  bluetooth: String
+  boite_motorisation: String
+  calandre: String
+  capot: String
+  date_expertise: String
+  feux_automatique: String
+  feux_av: String
+  gps: String
+  jantes_alu: String
+  nbre_places: String
+  pare_brise: String
+  pare_choc_av: String
+  phares: String
+  radar_recul: String
+  retros_rab_elec: String
+  sellerie: String
+  vitres_electriques: String
+}
+
+type Query {
+  searchVehicles(filters: VehicleFilterInput): [Vehicle!]!
+  vehicle(id: ID!): Vehicle
+  vehicles: [Vehicle!]!
+}
+
+type Vehicle {
+  bodyType: String!
+  brand: String!
+  co2Emission: Int!
+  color: String!
+  damageImages: [String!]
+  doors: Int!
+  expertise: Expertise
+  expertiseUrl: String
+  features: [String!]!
+  fees: Int!
+  fiscalPower: Int!
+  fuel: String!
+  id: ID!
+  images: [String!]!
+  licensePlate: String!
+  location: String!
+  mileage: Int!
+  missingFeatures: [String!]!
+  model: String!
+  newValue: Int
+  options: [String!]!
+  origin: String!
+  power: Int!
+  price: Int!
+  reference: String!
+  registrationDate: String!
+  seats: Int!
+  sourceId: String
+  totalPrice: Int!
+  tourUrl: String
+  transmission: String!
+  type: String!
+  vatRate: Int!
+  version: String!
+  vin: String!
+  weight: Int!
+  year: Int!
+}
+
+input VehicleFilterInput {
+  bodyType: String
+  brand: String
+  fuel: String
+  maxMileage: Int
+  maxPrice: Int
+  maxYear: Int
+  minPrice: Int
+  minYear: Int
+  model: String
+}
