@@ -5,6 +5,7 @@ import { McAutomobilesSource } from './sources/mc-automobiles/mc-automobiles.sou
 import { PaginationInput } from './dto/pagination.input';
 import { PaginatedVehicles } from './dto/paginated-vehicles.output';
 import { VehicleFilterInput } from './dto/vehicle-filter.input';
+import { VehicleMetadata } from './dto/vehicle-metadata.output';
 
 @Injectable()
 export class VehiclesService implements OnModuleInit {
@@ -75,6 +76,43 @@ export class VehiclesService implements OnModuleInit {
       page: pagination.page,
       limit: pagination.limit,
       totalPages,
+    };
+  }
+
+  /**
+   * Récupère les métadonnées des véhicules (valeurs distinctes)
+   * @returns Un objet contenant les listes de valeurs uniques
+   */
+  async getMetadata(): Promise<VehicleMetadata> {
+    // Récupérer tous les véhicules
+    const vehicles = await this.findAll();
+    
+    // Extraire les valeurs uniques pour chaque propriété
+    const getUniqueValues = <T>(property: keyof Vehicle): T[] => {
+      const values = new Set<T>();
+      vehicles.forEach(vehicle => {
+        const value = vehicle[property] as T;
+        if (value !== undefined && value !== null) {
+          values.add(value);
+        }
+      });
+      return Array.from(values).sort((a, b) => {
+        if (typeof a === 'number' && typeof b === 'number') {
+          return a - b;
+        }
+        return String(a).localeCompare(String(b));
+      });
+    };
+    
+    return {
+      brands: getUniqueValues<string>('brand'),
+      models: getUniqueValues<string>('model'),
+      versions: getUniqueValues<string>('version'),
+      fuels: getUniqueValues<string>('fuel'),
+      colors: getUniqueValues<string>('color'),
+      years: getUniqueValues<number>('year'),
+      bodyTypes: getUniqueValues<string>('bodyType'),
+      transmissions: getUniqueValues<string>('transmission'),
     };
   }
 }
