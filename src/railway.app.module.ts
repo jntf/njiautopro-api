@@ -7,21 +7,24 @@ import { AppService } from './app.service';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import { CorsTestController } from './cors-test.controller';
 
+/**
+ * Ce module est spécifiquement configuré pour Railway
+ * avec la protection CSRF désactivée.
+ * 
+ * Pour l'utiliser, renommez ce fichier en app.module.ts
+ * ou modifiez votre app.module.ts pour y inclure ces paramètres.
+ */
 @Module({
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      autoSchemaFile: true, // Génération de schéma en mémoire
       sortSchema: true,
-      buildSchemaOptions: {
-        orphanedTypes: []
-      },
       playground: true,
       introspection: true,
-      // Configuration CSRF pour permettre au playground de fonctionner
-      csrfPrevention: {
-        requestHeaders: ['content-type', 'apollo-require-preflight', 'x-apollo-operation-name'],
-      },
+      // Désactive complètement la protection CSRF
+      // REMARQUE: Ceci est moins sécurisé mais garantit le fonctionnement du playground
+      csrfPrevention: false,
     }),
     VehiclesModule,
   ],
