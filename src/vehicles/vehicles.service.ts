@@ -4,6 +4,7 @@ import { VehicleSource } from './sources/vehicle-source.interface';
 import { McAutomobilesSource } from './sources/mc-automobiles/mc-automobiles.source';
 import { PaginationInput } from './dto/pagination.input';
 import { PaginatedVehicles } from './dto/paginated-vehicles.output';
+import { VehicleFilterInput } from './dto/vehicle-filter.input';
 
 @Injectable()
 export class VehiclesService implements OnModuleInit {
@@ -26,7 +27,9 @@ export class VehiclesService implements OnModuleInit {
       await Promise.all(this.sources.map((source) => source.initialize()));
       this.logger.log('All data sources initialized successfully');
     } catch (error) {
-      this.logger.error(`Error initializing data sources: ${error.message}`, error.stack);
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Error initializing data sources: ${message}`, stack);
     }
   }
 
@@ -45,7 +48,10 @@ export class VehiclesService implements OnModuleInit {
     return null;
   }
 
-  async search(filters: any, pagination: PaginationInput): Promise<PaginatedVehicles> {
+  async search(
+    filters: VehicleFilterInput,
+    pagination: PaginationInput,
+  ): Promise<PaginatedVehicles> {
     const results = await Promise.all(
       this.sources.map((source) => source.searchVehicles(filters)),
     );
@@ -68,7 +74,7 @@ export class VehiclesService implements OnModuleInit {
       total,
       page: pagination.page,
       limit: pagination.limit,
-      totalPages
+      totalPages,
     };
   }
 }

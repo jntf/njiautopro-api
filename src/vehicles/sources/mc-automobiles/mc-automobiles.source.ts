@@ -3,8 +3,9 @@ import axios from 'axios';
 import { parseStringPromise } from 'xml2js';
 import { VehicleSource } from '../vehicle-source.interface';
 import { Vehicle } from '../../entities/vehicle.entity';
-import { RawVehicle, VehicleData, McSourceConfig } from './mc-automobiles.types';
+import { VehicleData, McSourceConfig } from './mc-automobiles.types';
 import { transformVehicle } from './mc-automobiles.transformer';
+import { VehicleFilterInput } from '../../dto/vehicle-filter.input';
 
 @Injectable()
 export class McAutomobilesSource implements VehicleSource {
@@ -40,66 +41,79 @@ export class McAutomobilesSource implements VehicleSource {
     // Si l'ID contient le préfixe de notre source
     if (id.startsWith(`${this.sourceId}-`)) {
       const rawId = id.replace(`${this.sourceId}-`, '');
-      return this.vehicles.find(v => v.id === id || v.reference === rawId) || null;
+      return (
+        this.vehicles.find((v) => v.id === id || v.reference === rawId) || null
+      );
     }
     
     // Sinon, on cherche par référence
-    return this.vehicles.find(v => v.reference === id) || null;
+    return this.vehicles.find((v) => v.reference === id) || null;
   }
   
-  async searchVehicles(filters: any): Promise<Vehicle[]> {
+  async searchVehicles(filters: VehicleFilterInput): Promise<Vehicle[]> {
     await this.ensureFreshCache();
     
     let filteredVehicles = [...this.vehicles];
     
     // Appliquer les filtres
     if (filters) {
+      // Filtre de recherche globale (ajouté)
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        filteredVehicles = filteredVehicles.filter(
+          (v) =>
+            v.brand.toLowerCase().includes(searchTerm) ||
+            v.model.toLowerCase().includes(searchTerm) ||
+            (v.version && v.version.toLowerCase().includes(searchTerm)),
+        );
+      }
+
+      // Filtres spécifiques existants
       if (filters.brand) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.brand.toLowerCase().includes(filters.brand.toLowerCase())
+        filteredVehicles = filteredVehicles.filter((v) =>
+          // Utilisation de ?. pour la sécurité, même si le if devrait suffire
+          v.brand.toLowerCase().includes(filters.brand?.toLowerCase() ?? ''),
         );
       }
       
       if (filters.model) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.model.toLowerCase().includes(filters.model.toLowerCase())
+        filteredVehicles = filteredVehicles.filter((v) =>
+          v.model.toLowerCase().includes(filters.model?.toLowerCase() ?? ''),
         );
       }
       
       if (filters.fuel) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.fuel.toLowerCase() === filters.fuel.toLowerCase()
+        filteredVehicles = filteredVehicles.filter(
+          (v) => v.fuel.toLowerCase() === filters.fuel?.toLowerCase(),
+        );
+      }
+
+      if (filters.bodyType) {
+        filteredVehicles = filteredVehicles.filter(
+          (v) =>
+            v.bodyType &&
+            v.bodyType.toLowerCase() === filters.bodyType?.toLowerCase(),
         );
       }
       
       if (filters.minPrice) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.price >= filters.minPrice
-        );
+        filteredVehicles = filteredVehicles.filter((v) => v.price >= filters.minPrice!);
       }
       
       if (filters.maxPrice) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.price <= filters.maxPrice
-        );
+        filteredVehicles = filteredVehicles.filter((v) => v.price <= filters.maxPrice!);
       }
       
       if (filters.minYear) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.year >= filters.minYear
-        );
+        filteredVehicles = filteredVehicles.filter((v) => v.year >= filters.minYear!);
       }
       
       if (filters.maxYear) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.year <= filters.maxYear
-        );
+        filteredVehicles = filteredVehicles.filter((v) => v.year <= filters.maxYear!);
       }
       
       if (filters.maxMileage) {
-        filteredVehicles = filteredVehicles.filter(v => 
-          v.mileage <= filters.maxMileage
-        );
+        filteredVehicles = filteredVehicles.filter((v) => v.mileage <= filters.maxMileage!);
       }
     }
     
@@ -114,10 +128,10 @@ export class McAutomobilesSource implements VehicleSource {
         responseType: 'text'
       });
       
-      const result = await parseStringPromise(response.data, {
+      const result = (await parseStringPromise(response.data, {
         explicitArray: false,
         mergeAttrs: true
-      }) as VehicleData;
+      })) as VehicleData;
       
       this.rawData = result;
       this.lastFetchTime = Date.now();
@@ -127,20 +141,22 @@ export class McAutomobilesSource implements VehicleSource {
         ? result.client.annonce 
         : [result.client.annonce];
       
-      this.vehicles = rawVehicles.map(vehicle => 
+      this.vehicles = rawVehicles.map((vehicle) => 
         transformVehicle(vehicle, this.sourceId)
       );
       
       this.logger.log(`Cache refreshed with ${this.vehicles.length} vehicles`);
     } catch (error) {
-      this.logger.error(`Error refreshing cache: ${error.message}`, error.stack);
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Error refreshing cache: ${message}`, stack);
       throw error;
     }
   }
   
   private async ensureFreshCache(): Promise<void> {
     const now = Date.now();
-    if (!this.rawData || (now - this.lastFetchTime > this.config.refreshInterval)) {
+    if (!this.rawData || now - this.lastFetchTime > this.config.refreshInterval) {
       await this.refreshCache();
     }
   }

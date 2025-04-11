@@ -28,4 +28,7 @@ export class VehicleFilterInput {
 
   @Field(() => Int, { nullable: true })
   maxMileage?: number;
+
+  @Field({ nullable: true })
+  search?: string;
 }
