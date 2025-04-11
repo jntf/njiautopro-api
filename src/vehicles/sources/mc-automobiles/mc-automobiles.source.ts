@@ -59,17 +59,13 @@ export class McAutomobilesSource implements VehicleSource {
     if (filters) {
       // Filtre de recherche globale (ajouté)
       if (filters.search) {
-        const searchTerms = filters.search.toLowerCase().split(/\s+/).filter(Boolean)
-        filteredVehicles = filteredVehicles.filter(vehicle => {
-          const vehicleText = [
-            vehicle.brand,
-            vehicle.model,
-            vehicle.version,
-            vehicle.fuel
-          ].filter(Boolean).join(' ').toLowerCase()
-          
-          return searchTerms.every(term => vehicleText.includes(term))
-        })
+        const searchTerm = filters.search.toLowerCase();
+        filteredVehicles = filteredVehicles.filter(
+          (v) =>
+            v.brand.toLowerCase().includes(searchTerm) ||
+            v.model.toLowerCase().includes(searchTerm) ||
+            (v.version && v.version.toLowerCase().includes(searchTerm)),
+        );
       }
 
       // Filtres spécifiques existants
