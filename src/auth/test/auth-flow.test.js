@@ -5,6 +5,15 @@
  * 1. Enregistrement d'un nouvel utilisateur
  * 2. Connexion et récupération d'un token
  * 3. Utilisation du token pour accéder à la requête protégée 'me'
+ * 4. Vérification que la requête 'me' échoue sans token
+ * 
+ * NOTE IMPORTANTE SUR LE TEST 4:
+ * La version précédente du test ne détectait pas correctement l'erreur GraphQL
+ * renvoyée par le serveur lorsque l'authentification échouait. Le test affichait
+ * à tort "La requête a réussi sans token" et "Tous les tests ont réussi", 
+ * alors qu'en réalité le backend refusait bien l'accès (erreur 401 Unauthorized).
+ * Cette correction permet de capturer et interpréter correctement les erreurs
+ * d'authentification GraphQL.
  * 
  * Pour exécuter ce script, utilisez:
  * node src/auth/test/auth-flow.test.js
@@ -42,9 +51,27 @@ async function executeGraphQL(query, variables = {}, token = null) {
       { headers }
     );
 
+    // Vérifier si la réponse GraphQL contient des erreurs
+    if (response.data.errors) {
+      const errorMessages = response.data.errors.map(err => {
+        const code = err.extensions?.code || 'UNKNOWN';
+        return `${err.message} (Code: ${code})`;
+      }).join(', ');
+      
+      throw new Error(`GraphQL Errors: ${errorMessages}`);
+    }
+
     return response.data;
   } catch (error) {
-    console.error('GraphQL Error:', error.response?.data || error.message);
+    // Déterminer si l'erreur vient d'une réponse HTTP (comme 401, 403)
+    if (error.response) {
+      console.error('Erreur HTTP:', error.response.status, error.response.statusText);
+      console.error('Détails:', error.response.data);
+      throw new Error(`Erreur HTTP ${error.response.status}: ${error.response.statusText}`);
+    }
+    
+    // Erreur réseau ou autre
+    console.error('GraphQL Error:', error.message);
     throw error;
   }
 }
@@ -142,10 +169,26 @@ async function testAuthFlow() {
     // 4. Test sans token (devrait échouer)
     console.log('🔒 Test de la requête "me" sans token (doit échouer)');
     try {
-      await executeGraphQL(meQuery);
+      const meResultWithoutToken = await executeGraphQL(meQuery);
+      
+      // Si on arrive ici, la requête a réussi sans token - c'est une erreur
       console.log('❌ ERREUR: La requête a réussi sans token!');
+      console.log(`Données reçues: ${JSON.stringify(meResultWithoutToken)}`);
+      throw new Error('La requête protégée "me" a réussi sans token d\'authentification!');
     } catch (error) {
-      console.log('✅ Correct! La requête a échoué sans token d\'authentification');
+      // Vérifier si l'erreur est due à un problème d'authentification (401)
+      if (error.message.includes('La requête protégée "me" a réussi sans token')) {
+        throw error; // Relancer cette erreur spécifique
+      } else if (error.message.includes('Erreur HTTP 401') || 
+                 error.message.includes('Unauthorized') || 
+                 error.message.includes('UNAUTHENTICATED')) {
+        // C'est le comportement attendu - la requête doit échouer sans token
+        console.log('✅ Correct! La requête a échoué sans token d\'authentification');
+      } else {
+        // Une autre erreur s'est produite
+        console.log(`⚠️ La requête a échoué, mais pour une raison inattendue: ${error.message}`);
+        throw new Error(`Test échoué pour une raison inattendue: ${error.message}`);
+      }
     }
     console.log('---------------------------------------------');
 
