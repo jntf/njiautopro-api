@@ -12,6 +12,9 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SourcesModule } from './sources/sources.module';
 import { DocumentationModule } from './documentation/documentation.module';
+// Pour résoudre l'erreur crypto
+import * as crypto from 'crypto';
+global.crypto = crypto;
 
 @Module({
   imports: [
