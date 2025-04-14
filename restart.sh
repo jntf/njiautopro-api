@@ -9,6 +9,9 @@ echo "Cleaning up build artifacts..."
 rm -rf dist/
 rm -rf node_modules/.cache
 
+echo "Removing GraphQL schema to ensure regeneration..."
+rm -f src/schema.gql
+
 echo "Rebuilding the application..."
 npm run build
 

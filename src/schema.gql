@@ -2,6 +2,31 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type AuthResponse {
+  access_token: String!
+  user: UserResponse!
+}
+
+input CreateSourceInput {
+  active: Boolean = true
+  additional_fees: Float = 0
+  commission_rate: Float = 0
+  name: String!
+  transport_fee: Float = 0
+  url: String!
+}
+
+input CreateUserInput {
+  email: String!
+  password: String!
+  role: String = "user"
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type Expertise {
   accoudoir: String
   anti_brouillard: String
@@ -24,10 +49,79 @@ type Expertise {
   vitres_electriques: String
 }
 
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  createSource(createSourceInput: CreateSourceInput!): Source!
+  createUser(createUserInput: CreateUserInput!): User!
+  login(loginInput: LoginInput!): AuthResponse!
+  register(registerInput: CreateUserInput!): AuthResponse!
+  removeSource(id: ID!): Boolean!
+  updateSource(updateSourceInput: UpdateSourceInput!): Source!
+}
+
+type PaginatedVehicles {
+  items: [Vehicle!]!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+input PaginationInput {
+  limit: Int! = 20
+  page: Int! = 1
+}
+
 type Query {
-  searchVehicles(filters: VehicleFilterInput): [Vehicle!]!
+  me: UserResponse!
+  searchVehicles(filters: VehicleFilterInput, pagination: PaginationInput): PaginatedVehicles!
+  source(id: ID!): Source!
+  sources: [Source!]!
+  user(id: ID!): User!
+  users: [User!]!
   vehicle(id: ID!): Vehicle
+
+  """Récupère les métadonnées des véhicules (listes de valeurs distinctes)"""
+  vehicleMetadata: VehicleMetadata!
   vehicles: [Vehicle!]!
+}
+
+type Source {
+  active: Boolean!
+  additional_fees: Float!
+  commission_rate: Float!
+  created_at: DateTime!
+  id: ID!
+  name: String!
+  transport_fee: Float!
+  url: String!
+}
+
+input UpdateSourceInput {
+  active: Boolean
+  additional_fees: Float
+  commission_rate: Float
+  id: ID!
+  name: String
+  transport_fee: Float
+  url: String
+}
+
+type User {
+  created_at: DateTime!
+  email: String!
+  id: ID!
+  role: String!
+}
+
+type UserResponse {
+  email: String!
+  id: Float!
+  role: String!
 }
 
 type Vehicle {
@@ -80,4 +174,31 @@ input VehicleFilterInput {
   minPrice: Int
   minYear: Int
   model: String
+  search: String
+}
+
+type VehicleMetadata {
+  """Liste des types de carrosserie disponibles"""
+  bodyTypes: [String!]!
+
+  """Liste des marques disponibles"""
+  brands: [String!]!
+
+  """Liste des couleurs disponibles"""
+  colors: [String!]!
+
+  """Liste des types de carburant disponibles"""
+  fuels: [String!]!
+
+  """Liste des modèles disponibles"""
+  models: [String!]!
+
+  """Liste des types de transmission disponibles"""
+  transmissions: [String!]!
+
+  """Liste des versions disponibles"""
+  versions: [String!]!
+
+  """Liste des années disponibles"""
+  years: [Float!]!
 }
