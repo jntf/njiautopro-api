@@ -4,14 +4,18 @@
  */
 
 // Polyfill pour crypto.randomUUID()
+const nodeCrypto = require('crypto');
+
+// Utilisons une approche différente pour éviter les problèmes de type
 if (typeof global.crypto === 'undefined') {
-  const crypto = require('crypto');
-  global.crypto = crypto;
-} else if (typeof global.crypto.randomUUID !== 'function') {
-  const origCrypto = global.crypto;
-  const crypto = require('crypto');
-  global.crypto = {
-    ...origCrypto,
-    randomUUID: crypto.randomUUID
+  // @ts-ignore
+  global.crypto = {};
+}
+
+// @ts-ignore
+if (typeof global.crypto.randomUUID !== 'function') {
+  // @ts-ignore
+  global.crypto.randomUUID = function() {
+    return nodeCrypto.randomUUID();
   };
 }

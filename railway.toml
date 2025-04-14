@@ -1,0 +1,21 @@
+# Configuration spécifique pour Railway
+
+[build]
+builder = "nixpacks"
+buildCommand = "node scripts/fix-typeorm-crypto.js && npm run build"
+
+[deploy]
+startCommand = "node dist/main.js"
+healthcheckPath = "/graphql"
+
+[service]
+internal_port = 3000
+auto_deploy = true
+
+[[env]]
+key = "NODE_ENV"
+value = "production"
+
+[[env]]
+key = "NODE_OPTIONS"
+value = "--experimental-vm-modules"
