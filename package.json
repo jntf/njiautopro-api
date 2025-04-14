@@ -24,6 +24,9 @@
     "init:db": "ts-node -r tsconfig-paths/register scripts/init-database.ts",
     "postinstall": "node scripts/fix-typeorm-crypto.js"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@nestjs/apollo": "^13.0.4",
     "@nestjs/common": "^11.0.1",

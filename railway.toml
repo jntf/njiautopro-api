@@ -4,6 +4,10 @@
 builder = "nixpacks"
 buildCommand = "node scripts/fix-typeorm-crypto.js && npm run build"
 
+[nixpacks]
+node_version = "20"
+
+
 [deploy]
 startCommand = "node dist/main.js"
 healthcheckPath = "/graphql"
