@@ -8,8 +8,8 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "NODE_OPTIONS=--experimental-vm-modules nest start",
-    "start:dev": "NODE_OPTIONS=--experimental-vm-modules nest start --watch",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -18,14 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "vercel-build": "node scripts/fix-typeorm.js && npm run build",
     "test:auth": "node src/auth/test/auth-flow.test.js",
-    "vercel-build": "node scripts/fix-typeorm-crypto.js && npm run build",
-    "create:admin": "ts-node -r tsconfig-paths/register scripts/create-admin.ts",
-    "init:db": "ts-node -r tsconfig-paths/register scripts/init-database.ts",
-    "postinstall": "node scripts/fix-typeorm-crypto.js"
-  },
-  "engines": {
-    "node": ">=20.0.0"
+    "postinstall": "node scripts/fix-typeorm.js"
   },
   "dependencies": {
     "@nestjs/apollo": "^13.0.4",
