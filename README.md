@@ -122,6 +122,84 @@ query {
 }
 ```
 
+### 5. Récupérer les métadonnées des véhicules avec filtrage optionnel (NOUVEAU)
+
+```graphql
+# Sans filtre - récupère toutes les valeurs distinctes
+query {
+  vehicleMetadata {
+    brands
+    models
+    versions
+    fuels
+    transmissions
+    bodyTypes
+    colors
+    years
+  }
+}
+
+# Avec filtre - récupère les valeurs distinctes pour les véhicules Peugeot
+query {
+  vehicleMetadata(filters: { brand: "Peugeot" }) {
+    models
+    versions
+    fuels
+    transmissions
+    bodyTypes
+    colors
+    years
+  }
+}
+```
+
+### 6. Filtrage en cascade avec sélection multiple (NOUVEAU)
+
+Cette nouvelle fonctionnalité permet de récupérer dynamiquement les options de filtrage disponibles en fonction des filtres déjà sélectionnés.
+
+```graphql
+# Exemple 1: Récupérer les modèles disponibles pour Peugeot et Renault
+query {
+  filterOptions(
+    targetFilter: "model",
+    selectedFilters: { 
+      brands: ["Peugeot", "Renault"] 
+    }
+  ) {
+    options
+    count
+  }
+}
+
+# Exemple 2: Récupérer les marques disponibles pour les véhicules diesel et essence
+query {
+  filterOptions(
+    targetFilter: "brand",
+    selectedFilters: { 
+      fuels: ["Diesel", "Essence"] 
+    }
+  ) {
+    options
+    count
+  }
+}
+
+# Exemple 3: Filtrage complexe - transmissions disponibles pour des critères multiples
+query {
+  filterOptions(
+    targetFilter: "transmission",
+    selectedFilters: { 
+      brands: ["Peugeot", "Renault"],
+      fuels: ["Diesel"],
+      minYear: 2018
+    }
+  ) {
+    options
+    count
+  }
+}
+```
+
 ## Intégration avec des clients
 
 ### Avec Apollo Client (JavaScript/TypeScript)
@@ -200,6 +278,155 @@ const { data } = await useAsyncQuery(gql`
     <div v-for="vehicle in data.vehicles" :key="vehicle.id">
       {{ vehicle.brand }} {{ vehicle.model }} - {{ vehicle.price }}€
     </div>
+  </div>
+</template>
+```
+
+### 7. Plages numériques pour années, kilométrage et prix (NOUVEAU)
+
+Cette nouvelle fonctionnalité permet de récupérer les plages de valeurs min/max pour les attributs numériques en fonction des filtres déjà sélectionnés.
+
+```graphql
+# Exemple 1: Récupérer la plage d'années disponibles
+query {
+  rangeOptions(
+    targetRange: "year"
+  ) {
+    min
+    max
+    count
+  }
+}
+
+# Exemple 2: Récupérer la plage de prix pour les véhicules Peugeot
+query {
+  rangeOptions(
+    targetRange: "price",
+    selectedFilters: {
+      brands: ["Peugeot"]
+    }
+  ) {
+    min
+    max
+    count
+  }
+}
+
+# Exemple 3: Récupérer la plage de kilométrage avec filtres multiples
+query {
+  rangeOptions(
+    targetRange: "mileage",
+    selectedFilters: {
+      brands: ["Peugeot", "Renault"],
+      fuels: ["Diesel"],
+      minYear: 2018
+    }
+  ) {
+    min
+    max
+    count
+  }
+}
+```
+
+## Exemple d'utilisation du filtrage en cascade avec Nuxt 3
+
+```vue
+<script setup>
+import { ref, computed, watch } from 'vue';
+import { useQuery } from '@vue/apollo-composable';
+import gql from 'graphql-tag';
+
+// Filtres sélectionnés
+const selectedFilters = ref({
+  brands: [],
+  models: [],
+  fuels: [],
+  transmissions: []
+});
+
+// Charger les métadonnées initiales
+const { result: metadataResult } = useQuery(gql`
+  query {
+    vehicleMetadata {
+      brands
+      fuels
+      transmissions
+      bodyTypes
+    }
+  }
+`);
+
+// Requête réactive pour les modèles disponibles
+const modelOptionsQuery = computed(() => {
+  if (!selectedFilters.value.brands.length) return null;
+  
+  return gql`
+    query {
+      filterOptions(
+        targetFilter: "model",
+        selectedFilters: {
+          brands: ${JSON.stringify(selectedFilters.value.brands)}
+        }
+      ) {
+        options
+        count
+      }
+    }
+  `;
+});
+
+const { result: modelOptions } = useQuery(modelOptionsQuery);
+
+// Surveiller les changements de filtres
+watch(() => selectedFilters.value, (newFilters) => {
+  // Réinitialiser les modèles si les marques changent
+  if (newFilters.brands.length === 0) {
+    selectedFilters.value.models = [];
+  }
+}, { deep: true });
+
+// Fonction pour effectuer une recherche
+const searchVehicles = () => {
+  // Implémenter la recherche avec les filtres sélectionnés
+};
+</script>
+
+<template>
+  <div>
+    <h2>Filtres</h2>
+    
+    <!-- Sélection des marques -->
+    <div>
+      <h3>Marques</h3>
+      <div v-for="brand in metadataResult?.vehicleMetadata?.brands" :key="brand">
+        <input 
+          type="checkbox" 
+          :id="brand" 
+          :value="brand" 
+          v-model="selectedFilters.brands"
+        >
+        <label :for="brand">{{ brand }}</label>
+      </div>
+    </div>
+    
+    <!-- Sélection des modèles (mise à jour dynamique) -->
+    <div v-if="modelOptions?.filterOptions?.options.length">
+      <h3>Modèles ({{ modelOptions.filterOptions.count }} véhicules)</h3>
+      <div v-for="model in modelOptions.filterOptions.options" :key="model">
+        <input 
+          type="checkbox" 
+          :id="model" 
+          :value="model" 
+          v-model="selectedFilters.models"
+        >
+        <label :for="model">{{ model }}</label>
+      </div>
+    </div>
+    
+    <!-- Autres filtres... -->
+    
+    <button @click="searchVehicles">Rechercher</button>
   </div>
 </template>
 ```

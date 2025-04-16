@@ -49,6 +49,11 @@ type Expertise {
   vitres_electriques: String
 }
 
+type FilterOptions {
+  count: Int!
+  options: [String!]!
+}
+
 input LoginInput {
   email: String!
   password: String!
@@ -77,7 +82,14 @@ input PaginationInput {
 }
 
 type Query {
+  """Récupère les options de filtrage disponibles selon les filtres actuels"""
+  filterOptions(selectedFilters: SelectedFiltersInput, targetFilter: String!): FilterOptions!
   me: UserResponse!
+
+  """
+  Récupère les plages de valeurs numériques disponibles (année, kilométrage, prix) selon les filtres actuels
+  """
+  rangeOptions(selectedFilters: SelectedFiltersInput, targetRange: String!): RangeOptions!
   searchVehicles(filters: VehicleFilterInput, pagination: PaginationInput): PaginatedVehicles!
   source(id: ID!): Source!
   sources: [Source!]!
@@ -85,9 +97,30 @@ type Query {
   users: [User!]!
   vehicle(id: ID!): Vehicle
 
-  """Récupère les métadonnées des véhicules (listes de valeurs distinctes)"""
-  vehicleMetadata: VehicleMetadata!
+  """Récupère les métadonnées des véhicules avec filtrage optionnel"""
+  vehicleMetadata(filters: VehicleFilterInput): VehicleMetadata!
   vehicles: [Vehicle!]!
+}
+
+type RangeOptions {
+  count: Int!
+  max: Int!
+  min: Int!
+}
+
+input SelectedFiltersInput {
+  bodyTypes: [String!]
+  brands: [String!]
+  fuels: [String!]
+  maxMileage: Int
+  maxPrice: Int
+  maxYear: Int
+  minMileage: Int
+  minPrice: Int
+  minYear: Int
+  models: [String!]
+  transmissions: [String!]
+  versions: [String!]
 }
 
 type Source {
