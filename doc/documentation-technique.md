@@ -247,6 +247,188 @@ query {
 - `bodyTypes` ([String!]!): Liste des types de carrosserie disponibles
 - `transmissions` ([String!]!): Liste des types de transmission disponibles
 
+### 6. Filtrage avancé en cascade
+
+Ces requêtes permettent d'implémenter un système de filtrage dynamique et en cascade.
+
+#### 6.1 Récupérer les options de filtrage en fonction des filtres déjà sélectionnés
+
+```graphql
+query {
+  filterOptions(
+    targetFilter: "model",
+    selectedFilters: { 
+      brands: ["Peugeot", "Renault"],
+      fuels: ["Diesel"]
+    }
+  ) {
+    options
+    count
+  }
+}
+```
+
+#### Arguments:
+- `targetFilter` (String!): Le filtre pour lequel on veut récupérer les options disponibles (brand, model, fuel, etc.)
+- `selectedFilters` (SelectedFiltersInput): Filtres déjà sélectionnés par l'utilisateur
+
+#### 6.2 Récupérer les plages de valeurs numériques en fonction des filtres sélectionnés
+
+```graphql
+query {
+  rangeOptions(
+    targetRange: "price",
+    selectedFilters: {
+      brands: ["Peugeot"],
+      minYear: 2018
+    }
+  ) {
+    min
+    max
+    count
+  }
+}
+```
+
+#### Arguments:
+- `targetRange` (String!): La plage pour laquelle on veut récupérer les valeurs min/max (year, price, mileage)
+- `selectedFilters` (SelectedFiltersInput): Filtres déjà sélectionnés par l'utilisateur
+
+### 7. Gestion des publications
+
+Ces requêtes permettent de gérer les publications de véhicules et de suivre leur popularité.
+
+#### 7.1 Récupérer toutes les publications (admin uniquement)
+
+```graphql
+query {
+  publications {
+    id
+    vehicle_id
+    internal_id
+    published
+    price_override
+    discount
+    created_at
+    updated_at
+    interest {
+      view_count
+      favorite_count
+      contact_count
+    }
+  }
+}
+```
+
+#### 7.2 Récupérer les véhicules publiés
+
+```graphql
+query {
+  publishedVehicles {
+    id
+    vehicle_id
+    internal_id
+    price_override
+    discount
+  }
+}
+```
+
+#### 7.3 Récupérer une publication par ID interne
+
+```graphql
+query {
+  publicationByInternalId(internalId: "550e8400-e29b-41d4-a716-446655440000") {
+    id
+    vehicle_id
+    price_override
+    discount
+    interest {
+      view_count
+      favorite_count
+    }
+  }
+}
+```
+
+#### 7.4 Récupérer les IDs des véhicules publiés
+
+```graphql
+query {
+  publishedVehicleIds {
+    vehicleIds
+  }
+}
+```
+
+#### 7.5 Publier un véhicule (admin uniquement)
+
+```graphql
+mutation {
+  publishVehicle(
+    vehicleId: "mc-automobiles-12345",
+    sourceId: 1,
+    priceOverride: 25000,
+    discount: 5.0
+  ) {
+    id
+    internal_id
+    published
+  }
+}
+```
+
+#### 7.6 Dépublier un véhicule (admin uniquement)
+
+```graphql
+mutation {
+  unpublishVehicle(publicationId: 1) {
+    id
+    published
+  }
+}
+```
+
+#### 7.7 Mettre à jour le prix ou la remise (admin uniquement)
+
+```graphql
+mutation {
+  updatePublicationPrice(
+    publicationId: 1,
+    priceOverride: 24500
+  ) {
+    id
+    price_override
+  }
+}
+
+mutation {
+  updatePublicationDiscount(
+    publicationId: 1,
+    discount: 7.5
+  ) {
+    id
+    discount
+  }
+}
+```
+
+#### 7.8 Suivre l'intérêt des utilisateurs
+
+```graphql
+mutation {
+  trackVehicleView(internalId: "550e8400-e29b-41d4-a716-446655440000")
+}
+
+mutation {
+  trackVehicleFavorite(internalId: "550e8400-e29b-41d4-a716-446655440000")
+}
+
+mutation {
+  trackVehicleContact(internalId: "550e8400-e29b-41d4-a716-446655440000")
+}
+```
+
 ## Modèles de données
 
 ### Vehicle
@@ -324,6 +506,56 @@ type Expertise {
 }
 ```
 
+### VehiclePublication
+
+Représente une publication de véhicule.
+
+```typescript
+type VehiclePublication {
+  id: ID!
+  vehicle_id: String!
+  source_id: ID!
+  internal_id: ID!
+  published: Boolean!
+  price_override: Int
+  price_history: [PriceHistoryEntry!]!
+  discount: Float
+  metadata: String!
+  created_at: DateTime!
+  updated_at: DateTime!
+  source: Source
+  interest: VehicleInterest
+}
+```
+
+### VehicleInterest
+
+Représente les statistiques d'intérêt pour un véhicule.
+
+```typescript
+type VehicleInterest {
+  id: ID!
+  view_count: Int!
+  favorite_count: Int!
+  contact_count: Int!
+  last_view_at: DateTime
+  metadata: String!
+  publication_id: Int!
+  publication: VehiclePublication
+}
+```
+
+### PriceHistoryEntry
+
+Représente une entrée dans l'historique des prix d'un véhicule.
+
+```typescript
+type PriceHistoryEntry {
+  price: Int!
+  date: String!
+}
+```
+
 ### VehicleFilterInput
 
 Utilisé pour filtrer les véhicules lors des recherches.
@@ -340,6 +572,27 @@ input VehicleFilterInput {
   maxPrice: Int
   maxMileage: Int
   search: String
+}
+```
+
+### SelectedFiltersInput
+
+Utilisé pour le filtrage en cascade et les plages.
+
+```typescript
+input SelectedFiltersInput {
+  brands: [String!]
+  models: [String!]
+  versions: [String!]
+  fuels: [String!]
+  transmissions: [String!]
+  bodyTypes: [String!]
+  minYear: Int
+  maxYear: Int
+  minPrice: Int
+  maxPrice: Int
+  minMileage: Int
+  maxMileage: Int
 }
 ```
 
@@ -385,7 +638,41 @@ type VehicleMetadata {
 }
 ```
 
+### FilterOptions
+
+Représente les options disponibles pour un filtre.
+
+```typescript
+type FilterOptions {
+  options: [String!]!
+  count: Int!
+}
+```
+
+### RangeOptions
+
+Représente les plages de valeurs numériques disponibles.
+
+```typescript
+type RangeOptions {
+  min: Int!
+  max: Int!
+  count: Int!
+}
+```
+
 ## Implémentation technique
+
+### Architecture modulaire
+
+L'API est conçue avec une architecture modulaire qui facilite l'extension et la maintenance:
+
+- **VehiclesModule**: Gestion des véhicules et recherche
+- **PublicationsModule**: Gestion des publications et suivi d'intérêt
+- **SourcesModule**: Gestion des sources de données
+- **AuthModule**: Authentification et autorisations
+- **UsersModule**: Gestion des utilisateurs
+- **DocumentationModule**: Accès à la documentation
 
 ### Sources de données
 
@@ -401,6 +688,31 @@ export interface VehicleSource {
   getVehicleById(id: string): Promise<Vehicle | null>;
   searchVehicles(filters: VehicleFilterInput): Promise<Vehicle[]>;
   refreshCache(): Promise<void>;
+}
+```
+
+### Système de publication
+
+Le système de publication permet de contrôler quels véhicules sont rendus publics et de personnaliser leur prix:
+
+```typescript
+@Injectable()
+export class PublicationsService {
+  // ...
+
+  async publishVehicle(vehicleId: string, sourceId: number, priceOverride?: number, discount?: number): Promise<VehiclePublication> {
+    // Logique de publication
+  }
+
+  async unpublishVehicle(publicationId: number): Promise<VehiclePublication> {
+    // Logique de dépublication
+  }
+
+  async trackView(internalId: string): Promise<void> {
+    // Logique de suivi des vues
+  }
+
+  // ...
 }
 ```
 
@@ -493,6 +805,8 @@ const { data } = await useAsyncQuery(gql`
 3. **Gardez vos requêtes légères** en ne demandant que les champs nécessaires
 4. **Utilisez les filtres et la pagination** pour réduire la quantité de données transférées
 5. **Utilisez la recherche globale** (`search`) pour une expérience utilisateur plus fluide
+6. **Utilisez les IDs internes** des publications pour les références publiques
+7. **Suivez l'intérêt des utilisateurs** pour améliorer votre offre
 
 ## Résolution de problèmes courants
 
@@ -512,6 +826,14 @@ csrfPrevention: {
 'apollo-require-preflight': 'true'
 ```
 
+### Véhicules non visibles après publication
+
+Si des véhicules publiés n'apparaissent pas, vérifiez:
+
+1. Que le véhicule est bien marqué comme `published: true`
+2. Que vous utilisez le bon ID interne
+3. Que la source associée est active
+
 ### Redémarrage après modifications
 
 Si vous modifiez les entités ou le schéma, utilisez le script de redémarrage:
@@ -522,6 +844,8 @@ chmod +x restart.sh
 ```
 
 ## Extension de l'API
+
+### Ajout d'une nouvelle source de données
 
 Pour ajouter une nouvelle source de données:
 
@@ -548,6 +872,14 @@ async onModuleInit() {
   // ...
 }
 ```
+
+### Ajout de nouvelles statistiques d'intérêt
+
+Pour ajouter de nouveaux types de suivi d'intérêt:
+
+1. Ajoutez un nouveau champ dans l'entité `VehicleInterest`
+2. Créez une nouvelle mutation dans `PublicationsResolver`
+3. Implémentez la méthode correspondante dans `PublicationsService`
 
 ## Déploiement
 

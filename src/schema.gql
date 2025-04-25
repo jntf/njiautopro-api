@@ -54,6 +54,9 @@ type FilterOptions {
   options: [String!]!
 }
 
+"""JSON custom scalar type"""
+scalar JSON
+
 input LoginInput {
   email: String!
   password: String!
@@ -63,8 +66,15 @@ type Mutation {
   createSource(createSourceInput: CreateSourceInput!): Source!
   createUser(createUserInput: CreateUserInput!): User!
   login(loginInput: LoginInput!): AuthResponse!
+  publishVehicle(discount: Float, priceOverride: Int, sourceId: ID!, vehicleId: String!): VehiclePublication!
   register(registerInput: CreateUserInput!): AuthResponse!
   removeSource(id: ID!): Boolean!
+  trackVehicleContact(internalId: ID!): Boolean!
+  trackVehicleFavorite(internalId: ID!): Boolean!
+  trackVehicleView(internalId: ID!): Boolean!
+  unpublishVehicle(publicationId: ID!): VehiclePublication!
+  updatePublicationDiscount(discount: Float!, publicationId: ID!): VehiclePublication!
+  updatePublicationPrice(priceOverride: Int!, publicationId: ID!): VehiclePublication!
   updateSource(updateSourceInput: UpdateSourceInput!): Source!
 }
 
@@ -81,10 +91,27 @@ input PaginationInput {
   page: Int! = 1
 }
 
+type PriceHistoryEntry {
+  date: String!
+  price: Int!
+}
+
+type PublishedVehicleIds {
+  vehicleIds: [String!]!
+}
+
+type PublishedVehiclesResponse {
+  vehicleIds: [String!]!
+}
+
 type Query {
   """Récupère les options de filtrage disponibles selon les filtres actuels"""
   filterOptions(selectedFilters: SelectedFiltersInput, targetFilter: String!): FilterOptions!
   me: UserResponse!
+  publicationByInternalId(internalId: ID!): VehiclePublication
+  publications: [VehiclePublication!]!
+  publishedVehicleIds: PublishedVehicleIds!
+  publishedVehicles: [VehiclePublication!]!
 
   """
   Récupère les plages de valeurs numériques disponibles (année, kilométrage, prix) selon les filtres actuels
@@ -96,6 +123,7 @@ type Query {
   user(id: ID!): User!
   users: [User!]!
   vehicle(id: ID!): Vehicle
+  vehicleByInternalId(internalId: ID!): Vehicle
 
   """Récupère les métadonnées des véhicules avec filtrage optionnel"""
   vehicleMetadata(filters: VehicleFilterInput): VehicleMetadata!
@@ -127,9 +155,13 @@ type Source {
   active: Boolean!
   additional_fees: Float!
   commission_rate: Float!
+  config: String
   created_at: DateTime!
   id: ID!
+  last_sync: DateTime
   name: String!
+  source_id: String!
+  source_type: String!
   transport_fee: Float!
   url: String!
 }
@@ -234,4 +266,18 @@ type VehicleMetadata {
 
   """Liste des années disponibles"""
   years: [Float!]!
+}
+
+type VehiclePublication {
+  created_at: DateTime!
+  discount: Float
+  id: ID!
+  internal_id: ID!
+  metadata: String!
+  price_history: [PriceHistoryEntry!]!
+  price_override: Int
+  published: Boolean!
+  source_id: ID!
+  updated_at: DateTime!
+  vehicle_id: String!
 }

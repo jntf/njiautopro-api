@@ -9,13 +9,21 @@ import { VehicleMetadata } from './dto/vehicle-metadata.output';
 import { FilterOptions } from './dto/filter-options.output';
 import { RangeOptions } from './dto/range-options.output';
 import { SelectedFiltersInput } from './dto/selected-filters.input';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { VehiclePublication } from './entities/vehicle-publication.entity';
 
 @Injectable()
 export class VehiclesService implements OnModuleInit {
   private readonly logger = new Logger(VehiclesService.name);
   private sources: VehicleSource[] = [];
+  private sourceMap: Map<string, VehicleSource> = new Map();
 
-  constructor(private readonly mcAutomobilesSource: McAutomobilesSource) {}
+  constructor(
+    private readonly mcAutomobilesSource: McAutomobilesSource,
+    @InjectRepository(VehiclePublication)
+    private publicationsRepository?: Repository<VehiclePublication>
+  ) {}
 
   async onModuleInit() {
     // Ajouter les sources de données
@@ -23,6 +31,10 @@ export class VehiclesService implements OnModuleInit {
       this.mcAutomobilesSource,
       // Ajouter d'autres sources ici au besoin
     ];
+    
+    for (const source of this.sources) {
+      this.sourceMap.set(source.sourceId, source);
+    }
 
     this.logger.log(`Initializing ${this.sources.length} vehicle data sources`);
     
@@ -50,6 +62,22 @@ export class VehiclesService implements OnModuleInit {
       if (vehicle) return vehicle;
     }
     return null;
+  }
+  
+  async findByInternalId(internalId: string): Promise<Vehicle | null> {
+    if (!this.publicationsRepository) {
+      throw new Error('Publications repository not available');
+    }
+    
+    // Trouver la publication par ID interne
+    const publication = await this.publicationsRepository.findOne({
+      where: { internal_id: internalId }
+    });
+    
+    if (!publication) return null;
+    
+    // Trouver le véhicule correspondant
+    return this.findOne(publication.vehicle_id);
   }
 
   async search(
@@ -280,6 +308,24 @@ export class VehiclesService implements OnModuleInit {
       min,
       max,
       count: filteredVehicles.length
+    };
+  }
+
+  /**
+   * Récupère les identifiants des véhicules publiés
+   */
+  async getPublishedVehicles(): Promise<{ vehicleIds: string[] }> {
+    if (!this.publicationsRepository) {
+      return { vehicleIds: [] };
+    }
+    
+    const publications = await this.publicationsRepository.find({
+      where: { published: true },
+      select: ['vehicle_id']
+    });
+    
+    return {
+      vehicleIds: publications.map(pub => pub.vehicle_id)
     };
   }
 

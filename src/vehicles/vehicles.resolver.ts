@@ -8,6 +8,7 @@ import { VehicleMetadata } from './dto/vehicle-metadata.output';
 import { FilterOptions } from './dto/filter-options.output';
 import { RangeOptions } from './dto/range-options.output';
 import { SelectedFiltersInput } from './dto/selected-filters.input';
+import { PublishedVehiclesResponse } from './dto/published-vehicles.output';
 
 @Resolver(() => Vehicle)
 export class VehiclesResolver {
@@ -21,6 +22,11 @@ export class VehiclesResolver {
   @Query(() => Vehicle, { name: 'vehicle', nullable: true })
   async findOne(@Args('id', { type: () => ID }) id: string) {
     return this.vehiclesService.findOne(id);
+  }
+  
+  @Query(() => Vehicle, { name: 'vehicleByInternalId', nullable: true })
+  async findByInternalId(@Args('internalId', { type: () => ID }) internalId: string) {
+    return this.vehiclesService.findByInternalId(internalId);
   }
 
   @Query(() => PaginatedVehicles, { name: 'searchVehicles' })
@@ -61,5 +67,10 @@ export class VehiclesResolver {
     @Args('selectedFilters', { nullable: true }) selectedFilters?: SelectedFiltersInput,
   ) {
     return this.vehiclesService.getRangeOptions(targetRange, selectedFilters);
+  }
+  
+  @Query(() => PublishedVehiclesResponse)
+  async publishedVehicles() {
+    return this.vehiclesService.getPublishedVehicles();
   }
 }

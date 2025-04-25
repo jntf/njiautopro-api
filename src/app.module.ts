@@ -12,6 +12,8 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SourcesModule } from './sources/sources.module';
 import { DocumentationModule } from './documentation/documentation.module';
+import { PublicationsModule } from './vehicles/publications/publications.module';
+import { CommonModule } from './common/common.module';
 // Le polyfill sera chargé par main.ts
 
 @Module({
@@ -72,6 +74,8 @@ import { DocumentationModule } from './documentation/documentation.module';
     AuthModule,
     SourcesModule,
     DocumentationModule,
+    PublicationsModule,
+    CommonModule
   ],
   controllers: [AppController, CorsTestController],
   providers: [AppService],

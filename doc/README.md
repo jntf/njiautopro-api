@@ -12,6 +12,8 @@ Cette documentation est organisée en plusieurs sections pour faciliter la navig
 4. [**Guide de déploiement**](guide-deploiement.md) - Instructions pour déployer l'API sur différentes plateformes
 5. [**Authentification et autorisation**](authentification.md) - Documentation du système d'authentification JWT
 6. [**Gestion des sources et commissions**](gestion-sources.md) - Guide de gestion des sources de données et des paramètres financiers
+7. [**Filtrage avancé**](filtrage-avance-guide-complet.md) - Documentation complète sur le système de filtrage avancé
+8. [**Gestion des publications**](gestion-publications.md) - Guide pour gérer la publication de véhicules et suivre leur popularité
 
 ## Vue d'ensemble du projet
 
@@ -25,8 +27,11 @@ NJI Auto Pro API est une API GraphQL développée avec NestJS qui permet d'accé
 - Pagination des résultats de recherche
 - Architecture extensible pour ajouter facilement de nouvelles sources de données
 - Récupération des métadonnées pour construire des interfaces de filtrage dynamiques
+- Filtrage en cascade et plages numériques pour une expérience utilisateur optimale
 - Authentification et autorisation basées sur JWT
 - Gestion des sources de données et des paramètres financiers (commissions, frais)
+- Système de publication pour contrôler la visibilité des véhicules
+- Suivi de l'intérêt des utilisateurs (vues, favoris, contacts)
 
 ### Technologies utilisées
 
@@ -99,11 +104,23 @@ L'API expose les points d'accès GraphQL suivants :
 - `vehicles` : Récupère tous les véhicules
 - `vehicle(id: ID!)` : Récupère un véhicule spécifique par son ID
 - `searchVehicles(filters: VehicleFilterInput, pagination: PaginationInput)` : Recherche des véhicules avec filtres et pagination
-- `vehicleMetadata` : Récupère les métadonnées des véhicules pour les filtres
+- `vehicleMetadata(filters: VehicleFilterInput)` : Récupère les métadonnées des véhicules pour les filtres
+- `filterOptions(targetFilter: String!, selectedFilters: SelectedFiltersInput)` : Récupère les options de filtrage en fonction des filtres sélectionnés
+- `rangeOptions(targetRange: String!, selectedFilters: SelectedFiltersInput)` : Récupère les plages de valeurs numériques disponibles
+
+#### Module Publications
+- `publications` : Liste toutes les publications (admin uniquement)
+- `publishedVehicles` : Liste les véhicules publiés
+- `publicationByInternalId(internalId: ID!)` : Récupère une publication par son ID interne
+- `publishedVehicleIds` : Récupère les IDs des véhicules publiés
+- `publishVehicle(vehicleId: String!, sourceId: ID!, priceOverride: Int, discount: Float)` : Publie un véhicule (admin uniquement)
+- `unpublishVehicle(publicationId: ID!)` : Dépublie un véhicule (admin uniquement)
+- `trackVehicleView/Favorite/Contact(internalId: ID!)` : Suit l'intérêt des utilisateurs
 
 #### Module Authentification
 - `register(registerInput: RegisterInput)` : Enregistre un nouvel utilisateur
 - `login(loginInput: LoginInput)` : Authentifie un utilisateur
+- `me` : Récupère les informations de l'utilisateur connecté
 
 #### Module Sources
 - `sources` : Liste toutes les sources configurées
@@ -148,6 +165,10 @@ src/
 ├── vehicles/                 # Module véhicules
 │   ├── dto/                  # Objets de transfert de données
 │   ├── entities/             # Définitions des entités GraphQL
+│   ├── publications/         # Système de publication de véhicules
+│   │   ├── publications.module.ts  # Module publications
+│   │   ├── publications.resolver.ts # Résolveur publications
+│   │   └── publications.service.ts  # Service publications
 │   ├── sources/              # Sources de données
 │   │   ├── vehicle-source.interface.ts  # Interface commune pour les sources
 │   │   └── mc-automobiles/   # Implémentation source MC Automobiles
